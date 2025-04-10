@@ -1,5 +1,0 @@
-tables==3.9.2
-torch==2.4.0
-chess==1.10.0
-ipykernel==6.29.5
-numpy==1.26.4
