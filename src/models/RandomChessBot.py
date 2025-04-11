@@ -2,6 +2,9 @@ import random
 
 class RandomChessBot:
 
+    def __init__(self):
+        random.seed(42)
+
     def make_move(self, board):
         # Get all legal moves
         legal_moves = list(board.legal_moves)

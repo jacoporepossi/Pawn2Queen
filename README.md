@@ -11,9 +11,9 @@ The name reflects the journey of a humble pawn becoming a queen in chess. It als
 
 ## 🚀 Project goals
 The project is focused on creating a chess AI using modern techniques while serving as a space for personal growth in fields such as:
-- **Transformer architectures**: GPT-style models for chess positions or move generation.
-- **Reinforcement Learning**: Training an agent to play chess through self-play and fine-tuning with RLHF.
-- **Knowledge Distillation**: Compressing large, complex models into smaller, efficient ones.
+- **Transformer architectures**: GPT-style models for chess positions or move generation
+- **Reinforcement Learning**: Training an agent to play chess through self-play and fine-tuning with RLHF
+- **Knowledge Distillation**: Compressing large, complex models into smaller, efficient ones
 
 Although primarily an educational project, my goal is to eventually **deploy the bot on Lichess**, where it can play against real opponents.\
 By doing so, I hope to gain insights into the strengths and weaknesses of the model, which can be used to further improve it through additional training and fine-tuning (and learning for me!).
@@ -30,7 +30,7 @@ This project uses Python and is managed with `pyproject.toml`. To set up the env
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/Pawn2Queen.git
+   git clone https://github.com/jacoporepossi/Pawn2Queen.git
    cd Pawn2Queen
    ```
 
@@ -38,13 +38,13 @@ This project uses Python and is managed with `pyproject.toml`. To set up the env
     ```bash
     pip install .
     ```
-    If you are planning to develop or contribute or make changes to the codebase, install the package in editable mode, using the -e flag. This allows you to make changes to the code without needing to reinstall the package every time:
+    If you plan to develop or contribute, install the package in editable mode:
     ```bash
     pip install -e .
     ```
 
 4. Set up the configuration file to use Stockfish as the chess engine:
-    - Download the Stockfish binary from the official website.
+    - Download the Stockfish binary from the [official website](https://stockfishchess.org/download/).
     - Rename `config.template.yaml` to `config.yaml`
     - Update the `config.yaml` file in the root directory with the path to the Stockfish binary. For example:
     ```yaml
@@ -70,10 +70,10 @@ Pawn2Queen/
 
 ## ✨ Features
 
-- **Play Against AI**: Play chess against a Transformer-powered AI or Stockfish.
-- **Customizable Levels**: Adjust the AI's skill level using Stockfish's UCI options.
-- **Model Evaluation**: Evaluate custom models against Stockfish at various levels.
-- **Training Framework**: Scripts for training and fine-tuning models using Reinforcement Learning.
+- **Play Against AI**: Play chess against a Transformer-powered AI or Stockfish
+- **Customizable Levels**: Adjust the AI's skill level using Stockfish's UCI options
+- **Model Evaluation**: Evaluate custom models against Stockfish at various levels
+- **Training Framework**: Scripts for training and fine-tuning models using Reinforcement Learning
 
 ## 📊 Evaluation
 
@@ -89,14 +89,20 @@ python src/evaluate/evaluate.py --levels 1 2 3 --rounds 50 --model_name RandomCh
 
 ## 🧠 Models
 
-| Model Name         | Description                | Wins | Losses | Draws | Win Rate |
-|--------------------|----------------------------|------|--------|-------|----------|
-| **RandomChessBot** | A bot that makes random moves | N/A   | N/A     | N/A     | N/A    |
-| **TransformerBot** | (Coming soon) A Transformer-based chess AI | N/A  | N/A    | N/A   | N/A      |
+| Model Name         | Description                              | Level | Wins | Losses | Draws | Win Rate |
+|--------------------|------------------------------------------|-------|------|--------|-------|----------|
+| **RandomChessBot** | A bot that makes random moves            | 1     | 2    | 148    | 50    | 26%      |
+|                    |                                          | 2     | 0    | 163    | 37    | 18.5%    |
+|                    |                                          | 3     | 0    | 200    | 0     | 0%       |
+|                    |                                          | 4     | 0    | 200    | 0     | 0%       |
+|                    |                                          | 5     | 0    | 200    | 0     | 0%       |
+|                    |                                          | 6     | 0    | 200    | 0     | 0%       |
+|                    |                                          | 7     | 0    | 200    | 0     | 0%       |
+| **TransformerBot** | (Coming soon) A Transformer-based chess AI |     | N/A  | N/A    | N/A   | N/A      |
 
 ### Notes:
-- **RandomChessBot**: A baseline bot that selects moves randomly. Useful for testing the pipeline.
-- **TransformerBot**: Currently under development. Will use GPT-style architecture for move generation.
+- **RandomChessBot**: A baseline bot that selects moves randomly. Useful for testing the pipeline
+- **TransformerBot**: Currently under development. Will use GPT-style architecture for move generation
 
 Results are based on evaluation against Stockfish at various levels.
 
@@ -109,5 +115,3 @@ Run the `play_vs_computer.ipynb` notebook in the `notebooks/` directory to play 
 ## 📧 Contact
 
 For questions or feedback, feel free to reach out to **Jacopo Repossi** at [jacopo.repossi@gmail.com](mailto:jacopo.repossi@gmail.com).
-
----

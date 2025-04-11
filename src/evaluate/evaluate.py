@@ -2,6 +2,7 @@ from utils.utils import load_model, model_vs_machine, LICHESS_LEVELS
 from pathlib import Path
 import yaml
 import argparse
+import random
 
 def evaluate_model(levels, rounds, model):
     """
@@ -42,6 +43,7 @@ def evaluate_model(levels, rounds, model):
 
 
 if __name__ == "__main__":
+    random.seed(42)  # For reproducibility
     parser = argparse.ArgumentParser(description="Evaluate a chess model against Stockfish.")
     parser.add_argument("--levels", type=int, nargs='+', default=[1, 2],
                         help="Stockfish levels to evaluate against (e.g., 1 2 3).")

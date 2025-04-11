@@ -4,6 +4,7 @@ from IPython.display import display
 import chess
 from chess.pgn import Game
 from importlib import import_module
+import random
 
 LICHESS_LEVELS = {
     1: {"SKILL": -9, "DEPTH": 5, "TIME_CONSTRAINT": 0.050},
@@ -157,48 +158,52 @@ def model_vs_machine(stockfish_path, engine_config, white_player_name, black_pla
     Returns:
         tuple: A tuple containing the number of wins, losses, draws, and the PGNs of the games played.
     """
+    random.seed(42)  # For reproducibility
     engine = load_engine(stockfish_path)
     engine.configure({'Skill Level': engine_config['SKILL'], 'Threads': 4, 'Hash': 4000})
 
-    # Model color
-    model_color = model_color.lower()
-    assert model_color in ["w", "b"], "Color played by model must be 'w' or 'b'!"
+    try:
+        # Model color
+        model_color = model_color.lower()
+        assert model_color in ["w", "b"], "Color played by model must be 'w' or 'b'!"
 
-    # Play
-    pgns = list()
-    wins, draws, losses = 0, 0, 0
+        # Play
+        pgns = list()
+        wins, draws, losses = 0, 0, 0
 
-    for _ in range(rounds):
-        board = chess.Board()
-        
-        if model_color == "w":
-            try:
-                board = model_move(model, board)
-            except Exception as e:
-                print(f"Error in model move: {e}")
-                continue
-
-        while not board.is_game_over():
-            try:
-                # Engine move
-                board = engine_move(board, engine, engine_config=engine_config)
-            except Exception as e:
-                print(f"Error in engine move: {e}")
+        for _ in range(rounds):
+            board = chess.Board()
             
-            if not board.is_game_over():
+            if model_color == "w":
                 try:
                     board = model_move(model, board)
                 except Exception as e:
                     print(f"Error in model move: {e}")
                     continue
 
-        # Record the result
-        result = board.result()
-        game = get_game_pgn(board=board, w_name=white_player_name, b_name=black_player_name, result=result)
-        pgns.append(game)
+            while not board.is_game_over():
+                try:
+                    # Engine move
+                    board = engine_move(board, engine, engine_config=engine_config)
+                except Exception as e:
+                    print(f"Error in engine move: {e}")
+                
+                if not board.is_game_over():
+                    try:
+                        board = model_move(model, board)
+                    except Exception as e:
+                        print(f"Error in model move: {e}")
+                        continue
 
-        wins += (int(result == '1-0') if model_color == "w" else int(result == '0-1'))
-        losses += (int(result == '0-1') if model_color == "w" else int(result == '1-0'))
-        draws += int(result == '1/2-1/2')
+            # Record the result
+            result = board.result()
+            game = get_game_pgn(board=board, w_name=white_player_name, b_name=black_player_name, result=result)
+            pgns.append(game)
 
-    return wins, losses, draws, pgns
+            wins += (int(result == '1-0') if model_color == "w" else int(result == '0-1'))
+            losses += (int(result == '0-1') if model_color == "w" else int(result == '1-0'))
+            draws += int(result == '1/2-1/2')
+        return wins, losses, draws, pgns
+
+    finally:
+        engine.close()
