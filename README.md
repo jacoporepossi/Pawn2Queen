@@ -89,29 +89,31 @@ python src/evaluate/evaluate.py --levels 1 2 3 --rounds 50 --model_name RandomCh
 
 ## 🧠 Models
 
-| Model Name         | Description                              | Level | Wins | Losses | Draws | Win Rate |
-|--------------------|------------------------------------------|-------|------|--------|-------|----------|
-| **RandomChessBot** | A bot that makes random moves            | 1     | 2    | 148    | 50    | 26%      |
-|                    |                                          | 2     | 0    | 163    | 37    | 18.5%    |
-|                    |                                          | 3     | 0    | 200    | 0     | 0%       |
-|                    |                                          | 4     | 0    | 200    | 0     | 0%       |
-|                    |                                          | 5     | 0    | 200    | 0     | 0%       |
-|                    |                                          | 6     | 0    | 200    | 0     | 0%       |
-|                    |                                          | 7     | 0    | 200    | 0     | 0%       |
-| **TransformerBot** | (Coming soon) A Transformer-based chess AI |     | N/A  | N/A    | N/A   | N/A      |
-
-### Notes:
-- **RandomChessBot**: A baseline bot that selects moves randomly. Useful for testing the pipeline
-- **TransformerBot**: Currently under development. Will use GPT-style architecture for move generation
-
-Results are based on evaluation against Stockfish at various levels.
-
-## 🧪 Example usage
-
-### Play Against Stockfish
-Run the `play_vs_computer.ipynb` notebook in the `notebooks/` directory to play against Stockfish or a Transformer-based AI.
+Here are the models currently implemented in the project and their match statistics against Stockfish at different levels. The evaluation was performed using 500 games for each color, for a total of 1000 games per level.
+The statistics, taken from [this reference](https://www.chessprogramming.org/Match_Statistics), are as follows:
+- **Wins**: Number of games won by the model, $w$
+- **Losses**: Number of games lost by the model, $l$
+- **Draws**: Number of games drawn by the model, $d$
+- **Win Ratio**: Ratio of wins to total games played, calculated as $(w + \frac{d}{2})/n$, where $n$ is the total number of games played
+- **Draw Ratio**: Ratio of draws to total games played
+- **Likelihood of Superiority (LOS)**: Calculated using the formula $0.5*[1 + erf((w - l)/√(w + 2l))]$, it refers to the statistical chance that one player (or engine) has a higher probability of winning against another, based on their rating difference or match results
 
 
-## 📧 Contact
+**RandomChessBot**: a simple bot that makes random moves. It serves as initial baseline for testing.
 
-For questions or feedback, feel free to reach out to **Jacopo Repossi** at [jacopo.repossi@gmail.com](mailto:jacopo.repossi@gmail.com).
+| Stockfish strength | Wins  | Losses | Draws | Win Ratio |Draw Ratio | LOS  |
+| :------------:     | :---: | :----: | :---: | :------:  | :------:  |:---: |
+| 1                  | 2     | 735    | 263   | 13.4%     | 26.3%     | 0%   |
+| 2                  | 0     | 796    | 204   | 10.2%     | 20.4%     | 0%   |
+| 3                  | 0     | 1000   | 0     | 0%        | 0%        | 0%   |
+| 4                  | 0     | 1000   | 0     | 0%        | 0%        | 0%   |
+| 5                  | 0     | 1000   | 0     | 0%        | 0%        | 0%   |
+| 6                  | 0     | 1000   | 0     | 0%        | 0%        | 0%   |
+| 7                  | 0     | 1000   | 0     | 0%        | 0%        | 0%   |
+
+**NeuralChessBot** a simple neural network-based bot that uses a feedforward neural network to evaluate positions and select moves (coming soon).\
+**TransformerBot**: a transformer-based bot that uses a transformer architecture to evaluate positions and select moves (coming soon).
+
+## 🧪 Playground
+
+It is possible to play against the AI using the `play_vs_computer.ipynb` notebook in the `notebooks/` directory, allowing you to either select the trained models or Stockfish as the opponent.

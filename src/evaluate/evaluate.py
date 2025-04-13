@@ -3,11 +3,13 @@ from pathlib import Path
 import yaml
 import argparse
 import random
+import math
 
 def evaluate_model(levels, rounds, model):
     """
     Evaluate the chess model against Stockfish at different levels.
     This function will play games against the engine at various levels and record the results.
+    Stats based on https://www.chessprogramming.org/Match_Statistics
 
     Args:
         levels (list): List of Stockfish levels to evaluate against.
@@ -68,7 +70,15 @@ if __name__ == "__main__":
                 )
 
     for lvl, res in results.items():
+        wins = res['wins']
+        losses = res['losses']
+        draws = res['draws']
+        total_games = wins + losses + draws
+
         print(f"Results for {lvl}:")
-        print(f"Wins: {res['wins']}, Losses: {res['losses']}, Draws: {res['draws']}")
-        print(f"Win ratio: {(res['wins'] + res['draws']) / (res['wins'] + res['losses'] + res['draws']) * 100:.2f}%")
+        print(f"Wins: {wins}, Losses: {losses}, Draws: {draws}")
+        print(f"Win ratio: {(wins + draws/2) / (total_games) * 100:.2f}%")
+        print(f"Draw ratio: {draws / total_games * 100:.2f}%")
+        print(f"Likelihood of superiority: {round(0.5 * (1 + math.erf((wins - losses) / math.sqrt(2 * (wins + losses)))), 2) * 100:.2f}%")
+        print()
     print("Evaluation completed.")
