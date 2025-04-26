@@ -7,11 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Planned
-- Initial implementation of Neural Network
 - Transformer-based model for chess move generation
-- Training scripts for custom models
-- Add testing scripts in tests/ directory
+- Reinforcement learning training loop
+- Knowledge distillation from Stockfish to the neural network model
 
+## [0.2.0] - 2025-04-26
+### Added
+- Initial implementation of a MLP Neural Network
+- Dataset script for creating a dataset and storing in shards
+- Training scripts for custom models
+- Improved evaluation scripts for testing model performance against Stockfish
 
 ## [0.1.0] - 2025-04-11
 ### Added
