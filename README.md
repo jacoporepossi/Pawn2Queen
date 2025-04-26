@@ -36,14 +36,10 @@ This project uses Python and is managed with `pyproject.toml`. To set up the env
 
 2. Install dependencies:
     ```bash
-    pip install .
-    ```
-    If you plan to develop or contribute, install the package in editable mode:
-    ```bash
     pip install -e .
     ```
 
-4. Set up the configuration file to use Stockfish as the chess engine:
+3. Set up the configuration file to use Stockfish as the chess engine:
     - Download the Stockfish binary from the [official website](https://stockfishchess.org/download/).
     - Rename `config.template.yaml` to `config.yaml`
     - Update the `config.yaml` file in the root directory with the path to the Stockfish binary. For example:
@@ -60,22 +56,56 @@ Pawn2Queen/
 ├── pyproject.toml
 ├── config.yaml            # Configurations
 ├── src/                   # Source code
+│   ├── config/            # Configuration files
 │   ├── evaluate/          # Evaluation scripts
 │   ├── models/            # Model architectures and implementations
 │   ├── train/             # Training scripts
 │   └── utils/             # Utility functions and helpers
-├── tests/                 # Unit tests and integration tests
+├── data/                  # Data files and resources
 └── notebooks/             # Jupyter notebooks for human play, experimentation and analysis
 ```
 
-## ✨ Features
+## 📊 Dataset
 
-- **Play Against AI**: Play chess against a Transformer-powered AI or Stockfish
-- **Customizable Levels**: Adjust the AI's skill level using Stockfish's UCI options
-- **Model Evaluation**: Evaluate custom models against Stockfish at various levels
-- **Training Framework**: Scripts for training and fine-tuning models using Reinforcement Learning
+The project uses the [Lichess Elite Database](https://database.nikonoel.fr/) for training and the [pgn-extract](https://www.cs.kent.ac.uk/people/staff/djb/pgn-extract/help.html) tool to extract the data. \
+Current training data includes games played in **2021 ended in a checkmate**, filtered and combined into a single PGN file.
+After downloading the pgn-extract executable, the command I used to combine the data is as follows:
 
-## 📊 Evaluation
+```bash
+pgn-extract -f 2021_elite_games_files.txt -M --quiet -o all_elite_2021.pgn
+```
+where `2021_elite_games_files.txt` is a txt file with the paths to the PGN files of the games in the folder, `-M` option is used to extract only the games that ended in a checkmate and `-o` option is used to specify the output file name.
+
+The extracted data is further processed to create a dataset of chess positions and moves to train the AI. The data is extracted in a format suitable for training, where each position is represented by a FEN string and each move is represented in UCI format. The data is structured as follows:
+
+- `position`: the FEN string representing the position of the chessboard before the move (starting from the initial position)
+- `move`: the move made by the player in UCI format (e.g., e2e4, g1f3)
+
+For instance, given the following PGN:
+```
+1. d4 Nf6
+```
+the extracted data will look like this:
+```
+Board (initial) --> "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+Move made       --> "d2d4"                                                       
+
+Board           --> "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1"  
+Move made       --> "g8f6"                                                           
+```
+
+This is only the initial step, as the strings will be converted into a tensor format suitable for training the model thanks to the `src/train/dataset.py` script.
+To prepare the data, I once again used the `pgn-extract` tool to process the data, going from the list of moves to a FEN annotated PGN file. The command I used is as follows:
+
+```bash
+pgn-extract --fencomments -Wlalg -C -N -V -w40000 --nochecks --noresults --quiet all.pgn -o all_parsed.pgn
+```
+
+where `--fencomments` option is used to add the FEN string as a comment to the moves, `-Wlalg` option is used to add the move in UCI format, `-C, -V, -N` are used to suppress comments, NAGs (Numeric Annotation Glyphs) and variations, `-w40000` option controls the line lengths and `--nochecks --noresults` options are used to exclude checks and game results.
+
+The script `src/train/dataset.py` is then used to prepare the data for training, which will save **98.013.396 positions from 1.293.126 games in 7 numpy shards (1GB each).**
+
+## 🔬 Evaluation
 
 The project includes an evaluation pipeline to test the AI against Stockfish at different levels. Use the following command to evaluate a model:
 
@@ -105,13 +135,24 @@ The statistics, taken from [this reference](https://www.chessprogramming.org/Mat
 | :------------:     | :---: | :----: | :---: | :------:  | :------:  |:---: |
 | 1                  | 2     | 735    | 263   | 13.4%     | 26.3%     | 0%   |
 | 2                  | 0     | 796    | 204   | 10.2%     | 20.4%     | 0%   |
-| 3                  | 0     | 1000   | 0     | 0%        | 0%        | 0%   |
-| 4                  | 0     | 1000   | 0     | 0%        | 0%        | 0%   |
-| 5                  | 0     | 1000   | 0     | 0%        | 0%        | 0%   |
-| 6                  | 0     | 1000   | 0     | 0%        | 0%        | 0%   |
-| 7                  | 0     | 1000   | 0     | 0%        | 0%        | 0%   |
+| 3                  | 0     | 1000   | 0     |    0%     |    0%     | 0%   |
+| 4                  | 0     | 1000   | 0     |    0%     |    0%     | 0%   |
+| 5                  | 0     | 1000   | 0     |    0%     |    0%     | 0%   |
+| 6                  | 0     | 1000   | 0     |    0%     |    0%     | 0%   |
+| 7                  | 0     | 1000   | 0     |    0%     |    0%     | 0%   |
 
-**NeuralChessBot** a simple neural network-based bot that uses a feedforward neural network to evaluate positions and select moves (coming soon).\
+**NeuralChessBot**: a simple neural network-based bot that evaluates positions and select moves.
+
+| Stockfish strength | Wins  | Losses | Draws | Win Ratio |Draw Ratio | LOS  |
+| :------------:     | :---: | :----: | :---: | :------:  | :------:  |:---: |
+| 1                  | 678   | 39     | 283   | 81.9%     | 28.3%     | 100% |
+| 2                  | 472   | 188    | 340   | 64.2%     | 34.0%     | 100% |
+| 3                  | 17    | 969    | 14    |  2.4%     |  1.4%     |   0% |
+| 4                  | 1     | 998    | 1     |  0.2%     |  0.1%     |   0% |
+| 5                  | 0     | 1000   | 0     |    0%     |    0%     |   0% |
+| 6                  | 0     | 1000   | 0     |    0%     |    0%     |   0% |
+| 7                  | 0     | 1000   | 0     |    0%     |    0%     |   0% |
+
 **TransformerBot**: a transformer-based bot that uses a transformer architecture to evaluate positions and select moves (coming soon).
 
 ## 🧪 Playground

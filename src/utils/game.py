@@ -1,21 +1,9 @@
 import chess
 import chess.engine
 from IPython.display import display
-import chess
 from chess.pgn import Game
 from importlib import import_module
-import random
 
-LICHESS_LEVELS = {
-    1: {"SKILL": -9, "DEPTH": 5, "TIME_CONSTRAINT": 0.050},
-    2: {"SKILL": -5, "DEPTH": 5, "TIME_CONSTRAINT": 0.100},
-    3: {"SKILL": -1, "DEPTH": 5, "TIME_CONSTRAINT": 0.150},
-    4: {"SKILL": 3, "DEPTH": 5, "TIME_CONSTRAINT": 0.200},
-    5: {"SKILL": 7, "DEPTH": 5, "TIME_CONSTRAINT": 0.300},
-    6: {"SKILL": 11, "DEPTH": 8, "TIME_CONSTRAINT": 0.400},
-    7: {"SKILL": 16, "DEPTH": 13, "TIME_CONSTRAINT": 0.500},
-    8: {"SKILL": 20, "DEPTH": 22, "TIME_CONSTRAINT": 1.000},
-}
 
 def get_game_pgn(board, w_name, b_name, result=None):
     """
@@ -67,7 +55,7 @@ def engine_move(board, engine, engine_config):
     Args:
         board (chess.Board): The current board state.
         engine (chess.engine.SimpleEngine): The chess engine instance.
-        engine_level (int): The skill level of the engine.
+        engine_config (dict): Configuration for the engine (e.g., skill level).
     
     Returns:
         chess.Board: The updated board state after the engine's move.
@@ -115,10 +103,10 @@ def model_move(model, board):
         board (chess.Board): The current board state.
 
     Returns:
-        chess.Board: The updated board state after the model's move.
+        tuple: The updated board state and the number of illegal moves made (if any, useful in the evaluate.py)
     """
-    board = model.make_move(board) 
-    return board
+    board, illegal_moves = model.make_move(board) 
+    return board, illegal_moves
 
 def human_move(board, move):
     """
@@ -158,7 +146,6 @@ def model_vs_machine(stockfish_path, engine_config, white_player_name, black_pla
     Returns:
         tuple: A tuple containing the number of wins, losses, draws, and the PGNs of the games played.
     """
-    random.seed(42)  # For reproducibility
     engine = load_engine(stockfish_path)
     engine.configure({'Skill Level': engine_config['SKILL'], 'Threads': 4, 'Hash': 4000})
 
@@ -169,14 +156,15 @@ def model_vs_machine(stockfish_path, engine_config, white_player_name, black_pla
 
         # Play
         pgns = list()
-        wins, draws, losses = 0, 0, 0
+        wins, draws, losses, illegal_moves = 0, 0, 0, 0
 
         for _ in range(rounds):
             board = chess.Board()
             
             if model_color == "w":
                 try:
-                    board = model_move(model, board)
+                    board, illegal_move = model_move(model, board)
+                    illegal_moves += illegal_move
                 except Exception as e:
                     print(f"Error in model move: {e}")
                     continue
@@ -190,7 +178,8 @@ def model_vs_machine(stockfish_path, engine_config, white_player_name, black_pla
                 
                 if not board.is_game_over():
                     try:
-                        board = model_move(model, board)
+                        board, illegal_move = model_move(model, board)
+                        illegal_moves += illegal_move
                     except Exception as e:
                         print(f"Error in model move: {e}")
                         continue
@@ -203,7 +192,7 @@ def model_vs_machine(stockfish_path, engine_config, white_player_name, black_pla
             wins += (int(result == '1-0') if model_color == "w" else int(result == '0-1'))
             losses += (int(result == '0-1') if model_color == "w" else int(result == '1-0'))
             draws += int(result == '1/2-1/2')
-        return wins, losses, draws, pgns
+        return wins, losses, draws, pgns, illegal_moves
 
     finally:
         engine.close()

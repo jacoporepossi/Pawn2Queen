@@ -13,12 +13,13 @@ authors = [
 ]
 dependencies = [
     "tables==3.9.2",
-    "torch==2.4.0",
+    "torch==2.8.0",
     "chess==1.10.0",
     "ipykernel==6.29.5",
     "numpy==1.26.4",
     "ipywidgets==8.1.5",
-    "pyyaml==6.0.2"
+    "pyyaml==6.0.2",
+    "matplotlib==3.10.1"
 ]
 keywords = ["chess", "AI", "transformer", "machine-learning"]
 classifiers = [
@@ -27,6 +28,9 @@ classifiers = [
 ]
 
 requires-python = ">=3.8"
+
+[tool.pip]
+extra-index-url = "https://download.pytorch.org/whl/nightly/cu128"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,9 +1,19 @@
-from utils.utils import load_model, model_vs_machine, LICHESS_LEVELS
+from utils.game import load_model, model_vs_machine
+import config.stockfish as CONFIG
 from pathlib import Path
 import yaml
 import argparse
 import random
 import math
+import torch
+import numpy as np
+
+def seed_everything(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
 
 def evaluate_model(levels, rounds, model):
     """
@@ -20,16 +30,14 @@ def evaluate_model(levels, rounds, model):
         dict: A dictionary containing the results of the evaluation.
     """
     results = {}
-    # Evaluate
     for LL in levels:
-        level_results = {"wins": 0, "losses": 0, "draws": 0, "pgns": []}
+        level_results = {"wins": 0, "losses": 0, "draws": 0, "pgns": [], "illegal_moves": 0}
         print(f"Evaluating against Stockfish level {LL}...")
         for model_color in ["w", "b"]:
             print(f"Model playing as {model_color.upper()}...")
-            # Play
-            w, l, d, pgns = model_vs_machine(
+            w, l, d, pgns, illegal_moves = model_vs_machine(
                 stockfish_path=config['stockfish_path'],
-                engine_config=LICHESS_LEVELS[LL],
+                engine_config=CONFIG.LICHESS_LEVELS[LL],
                 white_player_name="White Player",
                 black_player_name="Black Player",
                 model_color=model_color,
@@ -39,13 +47,14 @@ def evaluate_model(levels, rounds, model):
             level_results["losses"] += l
             level_results["draws"] += d
             level_results["pgns"].extend(pgns)
+            level_results["illegal_moves"] += illegal_moves
     
         results[f"level_{LL}"] = level_results
     return results
 
 
 if __name__ == "__main__":
-    random.seed(42)  # For reproducibility
+    seed_everything()
     parser = argparse.ArgumentParser(description="Evaluate a chess model against Stockfish.")
     parser.add_argument("--levels", type=int, nargs='+', default=[1, 2],
                         help="Stockfish levels to evaluate against (e.g., 1 2 3).")
@@ -79,6 +88,7 @@ if __name__ == "__main__":
         print(f"Wins: {wins}, Losses: {losses}, Draws: {draws}")
         print(f"Win ratio: {(wins + draws/2) / (total_games) * 100:.2f}%")
         print(f"Draw ratio: {draws / total_games * 100:.2f}%")
+        print(f"Illegal moves ratio: {res['illegal_moves'] / total_games * 100:.2f}%")
         print(f"Likelihood of superiority: {round(0.5 * (1 + math.erf((wins - losses) / math.sqrt(2 * (wins + losses)))), 2) * 100:.2f}%")
         print()
     print("Evaluation completed.")

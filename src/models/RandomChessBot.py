@@ -12,4 +12,4 @@ class RandomChessBot:
         # Select a random move
         random_move = random.choice(legal_moves)
         board.push(random_move)
-        return board
+        return board, 0

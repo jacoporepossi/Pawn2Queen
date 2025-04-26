@@ -179,3 +179,5 @@ data/*
 !*.template.yaml
 
 .vscode
+
+checkpoints/*
