@@ -4,23 +4,23 @@ import torch
 
 # Training parameters
 NPY_DATASET = Path(__file__).resolve().parents[2] / 'data/npy_shards_v2'
-CKPT_PATH = Path(__file__).resolve().parents[2] / 'checkpoints/t22_best_model.pth'
+CKPT_PATH = Path(__file__).resolve().parents[2] / 'checkpoints/t100_best_model.pth'
 
 EVAL_ITERS = 1000
 MAX_ITERS = 1_000_000
-EVAL_INTERVAL = 500
+EVAL_INTERVAL = 400
 LEARNING_RATE = 1e-4
 MIN_LEARNING_RATE = 5e-5 # learning rate / 10
 LR_DECAY_ITERS = MAX_ITERS
-BATCH_SIZE = 120
+BATCH_SIZE = 40
 WARMUP_ITERS = 1000
-GRADIENT_ACCUMULATION_STEPS = 2
+GRADIENT_ACCUMULATION_STEPS = 6
 VERBOSE_INTERVAL = 50
 
 # Model parameters 
 VOCAB_SIZE = 77
 SEQ_LENGTH = 77 # 77 is the max length of the input sequence
-EMB_SIZE = 384
+EMB_SIZE = 816
 NUM_HEADS = 16
 NUM_LAYERS = 12
 assert EMB_SIZE % NUM_HEADS == 0, "Embedding size must be divisible by number of heads"

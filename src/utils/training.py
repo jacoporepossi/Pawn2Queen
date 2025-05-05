@@ -9,7 +9,35 @@ def seed_everything(seed=42):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.benchmark = True # Enable this for faster training on GPUs
     torch.backends.cudnn.deterministic = True
+
+def inflate_weights(small_model, large_model):
+    small_state = small_model.state_dict()
+    large_state = large_model.state_dict()
+    new_state = {}
+
+    for k in large_state:
+        if k not in small_state:
+            # print(f"Skipping {k}, not in small model.")
+            new_state[k] = large_state[k]
+            continue
+
+        small_w = small_state[k]
+        large_w = large_state[k]
+        if small_w.shape == large_w.shape:
+            new_state[k] = small_w
+        else:
+            # Only handle the case where the new dimension is larger
+            slices = tuple(slice(0, min(s, l)) for s, l in zip(small_w.shape, large_w.shape))
+            temp = large_w.clone()
+            temp[slices] = small_w[slices]
+            new_state[k] = temp
+            # print(f"Inflated {k}: {small_w.shape} -> {large_w.shape}")
+    
+    large_model.load_state_dict(new_state)
+    return large_model
+
 
 def init_weights(m):
     """

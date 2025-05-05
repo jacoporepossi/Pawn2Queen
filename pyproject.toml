@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "Pawn2Queen"
-version = "0.1"
+version = "0.3"
 description = "Transformer-powered Chess AI"
 readme = "README.md"
 license = { file = "MIT" }
