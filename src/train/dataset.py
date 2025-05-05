@@ -8,48 +8,51 @@ import hashlib
 import re
 import glob
 import os
+import torch
+from collections import defaultdict
 
+def get_batch(shards_dir, batch_size, device, split, split_ratio=0.9):
+    """
+    Get a batch of data from the dataset, using memory mapping to load the data efficiently.
 
-class ChessNpyDataset(Dataset):
-    def __init__(self, shards_dir):
-        self.x_paths = sorted(glob.glob(os.path.join(shards_dir, 'x_*.npy')))
-        self.y_paths = sorted(glob.glob(os.path.join(shards_dir, 'y_*.npy')))
-        assert len(self.x_paths) == len(self.y_paths)
-        self.shard_lengths = []
-        self.cum_lengths = []
-        total = 0
-        for x_path in self.x_paths:
-            length = np.load(x_path, mmap_mode='r+').shape[0]
-            self.shard_lengths.append(length)
-            total += length
-            self.cum_lengths.append(total)
-        self.total = total
+    Args:
+        shards_dir (str): Directory containing the dataset shards.
+        batch_size (int): Size of the batch to load.
+        device (torch.device): Device to load the data onto (CPU or GPU).
+        split (str): Split type ('train' or 'val').
+        split_ratio (float, optional): Ratio for splitting the data into training and validation sets. Defaults to 0.9.
 
-        # Defer actual array opening to worker init
-        self._x_arrays = None
-        self._y_arrays = None
-
-    def _ensure_arrays(self):
-        # Lazily open mmap arrays per worker
-        if self._x_arrays is None:
-            self._x_arrays = [np.load(p, mmap_mode='r+') for p in self.x_paths]
-            self._y_arrays = [np.load(p, mmap_mode='r+') for p in self.y_paths]
-
-    def __len__(self):
-        return self.total
-
-    def __getitem__(self, idx):
-        self._ensure_arrays()
-        shard_idx = np.searchsorted(self.cum_lengths, idx, side='right')
-        if shard_idx == 0:
-            local_idx = idx
-        else:
-            local_idx = idx - self.cum_lengths[shard_idx-1]
-        x = self._x_arrays[shard_idx][local_idx]
-        y = self._y_arrays[shard_idx][local_idx]
-        return x, y
-
+    Returns:
+        tuple: A tuple containing the input data (x) and labels (y) as PyTorch tensors.
+    """
     
+    x_array = np.memmap(os.path.join(shards_dir, 'x.bin'), dtype=np.uint8, mode='r').reshape(-1, 77)
+    y_array = np.memmap(os.path.join(shards_dir, 'y.bin'), dtype=np.uint16, mode='r') 
+    
+    total = x_array.shape[0]
+    # Compute split indices
+    n_train = int(split_ratio * total)
+    if split == 'train':
+        start = 0
+        end = n_train
+    else:
+        start = n_train
+        end = total
+
+    # Sample random indices in the split
+    idx = np.random.randint(start, end, size=batch_size)
+    x = torch.from_numpy((x_array[idx]).astype(np.int64))
+    y = torch.from_numpy((y_array[idx]).astype(np.int64))
+
+    # Move to device, pin memory if CUDA
+    if device.type == 'cuda':
+        x = x.pin_memory().to(device, non_blocking=True)
+        y = y.pin_memory().to(device, non_blocking=True)
+    else:
+        x = x.to(device)
+        y = y.to(device)
+    return x, y
+
 def parse_games_with_fen(pgn_path):
     """
     Parse a PGN file and yield game lines with FEN strings.
@@ -89,6 +92,62 @@ def fen_label_hash(tok, label):
     b = bytes(tok) + label.to_bytes(4, byteorder='little')
     h = hashlib.blake2b(b, digest_size=8).digest()
     return h
+
+def unify_shards(npy_path):
+    """
+    Combine all numpy shards into a single memmap file.
+    This function reads all numpy files in the specified directory and combines them into a single memmap file.
+    """
+
+    x_paths = sorted(glob.glob(os.path.join(npy_path, 'x_*.npy')))
+    y_paths = sorted(glob.glob(os.path.join(npy_path, 'y_*.npy')))
+    x_shapes = [np.load(fn, mmap_mode='r').shape for fn in x_paths]
+    y_shapes = [np.load(fn, mmap_mode='r').shape for fn in y_paths]
+
+    total_rows = sum(shape[0] for shape in x_shapes)
+    D = x_shapes[0][1]  # assuming all have the same number of columns
+
+    big_shard = np.memmap(
+        '../data/npy_shards_v2/x.bin',
+        mode='w+',
+        dtype=np.uint8,
+        shape=(total_rows, D)
+    )
+
+    start = 0
+    BATCH_SIZE = 10000  # Adjust this based on your memory constraints
+    for fn, shape in zip(x_paths, x_shapes):
+        nrows = shape[0]
+        shard = np.load(fn, mmap_mode='r').astype(np.uint8)
+        for i in range(0, nrows, BATCH_SIZE):
+            end = min(i + BATCH_SIZE, nrows)
+            big_shard[start + i:start + end] = shard[i:end]
+        start += nrows
+
+    # Optional: flush changes to disk
+    big_shard.flush()
+
+    total_rows = sum(shape[0] for shape in y_shapes)
+
+    big_shard = np.memmap(
+        '../data/npy_shards_v2/y.bin',
+        mode='w+',
+        dtype=np.uint16,
+        shape=(total_rows, )
+    )
+
+    start = 0
+    BATCH_SIZE = 10000  # Adjust this based on your memory constraints
+    for fn, shape in zip(y_paths, y_shapes):
+        nrows = shape[0]
+        shard = np.load(fn, mmap_mode='r').astype(np.uint16)
+        for i in range(0, nrows, BATCH_SIZE):
+            end = min(i + BATCH_SIZE, nrows)
+            big_shard[start + i:start + end] = shard[i:end]
+        start += nrows
+
+    # Optional: flush changes to disk
+    big_shard.flush()
 
 def generate_dataset(pgn_path, npy_path, max_games=None, chunk_size=1000):
     """
@@ -156,8 +215,8 @@ def generate_dataset(pgn_path, npy_path, max_games=None, chunk_size=1000):
                     # Save in chunks
                     if len(tokens) >= chunk_size:
                         idx = np.random.permutation(len(tokens)) # shuffle the data
-                        x_arr = np.stack([tokens[i] for i in idx])
-                        y_arr = np.array([labels[i] for i in idx], dtype='int32')
+                        x_arr = np.stack([tokens[i] for i in idx], dtype='uint8')
+                        y_arr = np.array([labels[i] for i in idx], dtype='uint16')
                         np.save(npy_path / f'x_{shard_idx:05d}.npy', x_arr)
                         np.save(npy_path / f'y_{shard_idx:05d}.npy', y_arr)
                         tokens.clear()
@@ -173,8 +232,8 @@ def generate_dataset(pgn_path, npy_path, max_games=None, chunk_size=1000):
     # Write any leftovers
     if tokens:
         idx = np.random.permutation(len(tokens))
-        x_arr = np.stack([tokens[i] for i in idx])
-        y_arr = np.array([labels[i] for i in idx], dtype='int32')
+        x_arr = np.stack([tokens[i] for i in idx], dtype='uint8')
+        y_arr = np.array([labels[i] for i in idx], dtype='uint16')
         np.save(os.path.join(npy_path, f'x_{shard_idx:05d}.npy'), x_arr)
         np.save(os.path.join(npy_path, f'y_{shard_idx:05d}.npy'), y_arr)
         print(f"Final shard {shard_idx:05d} written ({len(x_arr)} positions).")
@@ -184,7 +243,7 @@ def generate_dataset(pgn_path, npy_path, max_games=None, chunk_size=1000):
 
 if __name__ == "__main__":
     lichess_pgn_path = Path(__file__).resolve().parents[2] / 'data/all_elite_2021_fen.pgn'
-    npy_path = Path(__file__).resolve().parents[2] / 'data/npy_shards'
+    npy_path = Path(__file__).resolve().parents[2] / 'data/npy_shards_v2'
 
     parser = argparse.ArgumentParser(description="Convert PGN to HDF5")
     parser.add_argument("pgn_path", type=str, nargs='?', default=lichess_pgn_path, help="Path to the PGN file")

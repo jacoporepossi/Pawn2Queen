@@ -12,8 +12,7 @@ authors = [
     { name = "Jacopo Repossi", email = "jacopo.repossi@gmail.com" }
 ]
 dependencies = [
-    "tables==3.9.2",
-    "torch==2.8.0",
+    "torch==2.7.0",
     "chess==1.10.0",
     "ipykernel==6.29.5",
     "numpy==1.26.4",
@@ -28,9 +27,6 @@ classifiers = [
 ]
 
 requires-python = ">=3.8"
-
-[tool.pip]
-extra-index-url = "https://download.pytorch.org/whl/nightly/cu128"
 
 [tool.setuptools.packages.find]
 where = ["src"]

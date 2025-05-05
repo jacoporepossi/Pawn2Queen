@@ -1,6 +1,5 @@
 import numpy as np
-import chess 
-from line_profiler import profile
+import chess
 
 # This source of this code is https://github.com/google-deepmind/searchless_chess/blob/main/src/utils.py
 
@@ -18,7 +17,6 @@ _CHARACTERS_INDEX = {letter: index for index, letter in enumerate(_CHARACTERS)}
 _SPACES_CHARACTERS = frozenset({'1', '2', '3', '4', '5', '6', '7', '8'})
 SEQUENCE_LENGTH = 77
 
-@profile
 def tokenize(fen: str):
   """Returns an array of tokens from a fen string.
 
@@ -75,6 +73,59 @@ def tokenize(fen: str):
 
   return np.asarray(indices, dtype=np.uint8)
 
+def detokenize(tokens):
+    """Inverse of tokenize: reconstructs FEN from token array."""
+    # Build inverse mapping
+    index_to_char = {v: k for k, v in _CHARACTERS_INDEX.items()}
+    # Ensure tokens is a list or 1D array of ints
+    tokens = list(tokens)
+    chars = [index_to_char[int(t)] for t in tokens]
+
+    # Side to move
+    side = chars[0]
+
+    # Board (64 squares)
+    board_chars = chars[1:65]
+    fen_board = ''
+    empty_count = 0
+    for i, c in enumerate(board_chars):
+        if c == '.':
+            empty_count += 1
+        else:
+            if empty_count > 0:
+                fen_board += str(empty_count)
+                empty_count = 0
+            fen_board += c
+        if (i + 1) % 8 == 0:
+            if empty_count > 0:
+                fen_board += str(empty_count)
+                empty_count = 0
+            if i != 63:
+                fen_board += '/'
+
+    # Castling rights
+    castling = ''.join(chars[65:69]).replace('.', '')
+    if not castling:
+        castling = '-'
+
+    # En passant
+    en_passant = ''.join(chars[69:71])
+    if en_passant == '..':
+        en_passant = '-'
+
+    # Halfmove clock
+    halfmove = ''.join(chars[71:74]).replace('.', '')
+    if not halfmove:
+        halfmove = '0'
+
+    # Fullmove number
+    fullmove = ''.join(chars[74:77]).replace('.', '')
+    if not fullmove:
+        fullmove = '1'
+
+    # Compose FEN
+    fen = f"{fen_board} {side} {castling} {en_passant} {halfmove} {fullmove}"
+    return fen
 
 def compute_all_possible_moves():
   """Returns two dicts converting moves to actions and actions to moves.

@@ -57,10 +57,7 @@ class NeuralChessBot:
 
         top_moves = torch.topk(probs.flatten(), 100).indices
 
-        if self.device == 'cuda':
-            indices = top_moves.cpu().numpy()
-        else:
-            indices = top_moves.numpy()
+        indices = top_moves.cpu().numpy()
 
         move_strs = [self.atm[idx] for idx in indices]
         for move_str in move_strs:

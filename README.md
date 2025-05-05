@@ -153,7 +153,17 @@ The statistics, taken from [this reference](https://www.chessprogramming.org/Mat
 | 6                  | 0     | 1000   | 0     |    0%     |    0%     |   0% |
 | 7                  | 0     | 1000   | 0     |    0%     |    0%     |   0% |
 
-**TransformerBot**: a transformer-based bot that uses a transformer architecture to evaluate positions and select moves (coming soon).
+**T22ChessBot**: a transformer-based bot that uses a transformer architecture (22M params, encoder only) to evaluate positions and select moves.
+
+| Stockfish strength | Wins  | Losses | Draws | Win Ratio |Draw Ratio | LOS  |
+| :------------:     | :---: | :----: | :---: | :------:  | :------:  |:---: |
+| 1                  | 910   | 1      | 89    |  95.5%    |   8.9%    | 100% |
+| 2                  | 895   | 9      | 96    |  94.3%    |   9.6%    | 100% |
+| 3                  | 189   | 712    | 99    |  23.9%    |   9.9%    |   0% |
+| 4                  | 13    | 967    | 20    |   2.3%    |   2.0%    |   0% |
+| 5                  | 1     | 989    | 10    |   0.6%    |   1.0%    |   0% |
+| 6                  | 0     | 1000   | 0     |     0%    |     0%    |   0% |
+| 7                  | 0     | 1000   | 0     |     0%    |     0%    |   0% |
 
 ## 🧪 Playground
 
