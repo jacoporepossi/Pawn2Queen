@@ -7,9 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Planned
-- Transformer-based model for chess move generation
+- Encoder-decoder transformer chess bot for move prediction and follow-up move generation
 - Reinforcement learning training loop
 - Knowledge distillation from Stockfish to the neural network model
+
+
+## [0.3.0] - 2025-05-05
+### Added
+- Add encoder only 22M transformer chess bot
+- Improve training scripts, adding cosine annealing, gradient accumulation, and mixed precision training
 
 ## [0.2.0] - 2025-04-26
 ### Added
